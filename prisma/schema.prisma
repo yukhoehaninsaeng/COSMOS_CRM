@@ -1,0 +1,401 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Customer {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String?  @map("tenant_id") @db.Uuid
+  unifiedId   String?  @map("unified_id") @db.Uuid
+  email       String?
+  phone       String?
+  name        String?
+  gender      String?
+  birthYear   Int?     @map("birth_year")
+  skinType    String?  @map("skin_type")
+  segment     String?
+  rfmScore    Json?    @map("rfm_score")
+  ltv         Decimal? @db.Decimal(15, 2)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  identities  CustomerIdentity[]
+  events      CustomerEvent[]
+  orders      Order[]
+  campaignSends CampaignSend[]
+  journeyEnrollments JourneyEnrollment[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([unifiedId])
+  @@index([segment])
+  @@map("customers")
+}
+
+model CustomerIdentity {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId      String   @map("customer_id") @db.Uuid
+  channel         String
+  channelUserId   String   @map("channel_user_id")
+  identifierType  String   @map("identifier_type")
+  identifierValue String   @map("identifier_value")
+  confidenceScore Decimal  @default(1.0) @map("confidence_score") @db.Decimal(3, 2)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([channel, channelUserId])
+  @@map("customer_identities")
+}
+
+model CustomerEvent {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId  String   @map("customer_id") @db.Uuid
+  eventType   String   @map("event_type")
+  channel     String?
+  skuMasterId String?  @map("sku_master_id") @db.Uuid
+  meta        Json?
+  occurredAt  DateTime @default(now()) @map("occurred_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  sku      SkuMaster? @relation(fields: [skuMasterId], references: [id])
+
+  @@index([customerId])
+  @@index([eventType])
+  @@index([occurredAt])
+  @@map("customer_events")
+}
+
+model SkuMaster {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String?  @map("tenant_id") @db.Uuid
+  skuCode      String   @unique @map("sku_code")
+  name         String
+  category     String
+  subCategory  String?  @map("sub_category")
+  ingredients  Json?
+  unitCost     Decimal? @map("unit_cost") @db.Decimal(15, 2)
+  sellingPrice Decimal? @map("selling_price") @db.Decimal(15, 2)
+  lotExpiry    DateTime? @map("lot_expiry") @db.Date
+  isBundle     Boolean  @default(false) @map("is_bundle")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  aliases      SkuAlias[]
+  bundleItems  SkuBundle[] @relation("BundleSku")
+  components   SkuBundle[] @relation("ComponentSku")
+  inventory    Inventory[]
+  orderItems   OrderItem[]
+  vocReviews   VocReview[]
+  customerEvents CustomerEvent[]
+
+  @@index([skuCode])
+  @@index([category])
+  @@index([isBundle])
+  @@map("sku_master")
+}
+
+model SkuAlias {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  skuMasterId String   @map("sku_master_id") @db.Uuid
+  channel     String
+  aliasCode   String   @map("alias_code")
+  aliasName   String?  @map("alias_name")
+  isVerified  Boolean  @default(false) @map("is_verified")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  skuMaster SkuMaster @relation(fields: [skuMasterId], references: [id], onDelete: Cascade)
+
+  @@unique([channel, aliasCode])
+  @@map("sku_aliases")
+}
+
+model SkuBundle {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bundleSkuId     String   @map("bundle_sku_id") @db.Uuid
+  componentSkuId  String   @map("component_sku_id") @db.Uuid
+  qty             Int
+  costRatio       Decimal  @map("cost_ratio") @db.Decimal(5, 4)
+  isGift          Boolean  @default(false) @map("is_gift")
+
+  bundleSku    SkuMaster @relation("BundleSku", fields: [bundleSkuId], references: [id])
+  componentSku SkuMaster @relation("ComponentSku", fields: [componentSkuId], references: [id])
+
+  @@map("sku_bundles")
+}
+
+model Inventory {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  skuMasterId  String   @map("sku_master_id") @db.Uuid
+  channel      String
+  qtyAvailable Int      @default(0) @map("qty_available")
+  qtyReserved  Int      @default(0) @map("qty_reserved")
+  reorderPoint Int      @default(10) @map("reorder_point")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  skuMaster SkuMaster @relation(fields: [skuMasterId], references: [id], onDelete: Cascade)
+
+  @@unique([skuMasterId, channel])
+  @@index([skuMasterId])
+  @@map("inventory")
+}
+
+model Order {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId     String   @map("customer_id") @db.Uuid
+  channel        String
+  channelOrderId String?  @map("channel_order_id")
+  totalAmount    Decimal  @map("total_amount") @db.Decimal(15, 2)
+  discountAmount Decimal  @default(0) @map("discount_amount") @db.Decimal(15, 2)
+  status         String
+  orderedAt      DateTime @map("ordered_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  orderItems OrderItem[]
+
+  @@index([customerId])
+  @@index([channel])
+  @@index([orderedAt])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId      String   @map("order_id") @db.Uuid
+  skuMasterId  String   @map("sku_master_id") @db.Uuid
+  qty          Int
+  unitPrice    Decimal  @map("unit_price") @db.Decimal(15, 2)
+  lotNumber    String?  @map("lot_number")
+  isBundleItem Boolean  @default(false) @map("is_bundle_item")
+  parentItemId String?  @map("parent_item_id") @db.Uuid
+
+  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  skuMaster SkuMaster @relation(fields: [skuMasterId], references: [id])
+
+  @@map("order_items")
+}
+
+model ChannelOrderRaw {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  channel      String
+  rawJson      Json     @map("raw_json")
+  processed    Boolean  @default(false)
+  errorMessage String?  @map("error_message")
+  ingestedAt   DateTime @default(now()) @map("ingested_at")
+
+  @@index([channel])
+  @@index([processed])
+  @@index([ingestedAt])
+  @@map("channel_orders_raw")
+}
+
+model Campaign {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  type          String
+  status        String    @default("draft")
+  segmentFilter Json?     @map("segment_filter")
+  abTest        Json?     @map("ab_test")
+  scheduledAt   DateTime? @map("scheduled_at")
+  sentAt        DateTime? @map("sent_at")
+  createdBy     String?   @map("created_by") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  sends              CampaignSend[]
+  influencerCampaigns InfluencerCampaign[]
+  creator            User?   @relation(fields: [createdBy], references: [id])
+
+  @@map("campaigns")
+}
+
+model CampaignSend {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId  String    @map("campaign_id") @db.Uuid
+  customerId  String    @map("customer_id") @db.Uuid
+  variant     String?
+  status      String    @default("sent")
+  sentAt      DateTime? @map("sent_at")
+  openedAt    DateTime? @map("opened_at")
+  clickedAt   DateTime? @map("clicked_at")
+  convertedAt DateTime? @map("converted_at")
+  revenueAttr Decimal?  @map("revenue_attr") @db.Decimal(15, 2)
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([campaignId])
+  @@index([customerId])
+  @@index([status])
+  @@map("campaign_sends")
+}
+
+model Journey {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  triggerType   String   @map("trigger_type")
+  triggerConfig Json?    @map("trigger_config")
+  steps         Json?
+  isActive      Boolean  @default(true) @map("is_active")
+  createdBy     String?  @map("created_by") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  enrollments JourneyEnrollment[]
+  creator     User? @relation(fields: [createdBy], references: [id])
+
+  @@map("journeys")
+}
+
+model JourneyEnrollment {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  journeyId   String   @map("journey_id") @db.Uuid
+  customerId  String   @map("customer_id") @db.Uuid
+  currentStep Int      @default(0) @map("current_step")
+  status      String   @default("active")
+  enrolledAt  DateTime @default(now()) @map("enrolled_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  journey  Journey  @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@map("journey_enrollments")
+}
+
+model Influencer {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  channel        String
+  handle         String
+  followerCnt    Int?     @map("follower_cnt")
+  avgEngagement  Decimal? @map("avg_engagement") @db.Decimal(5, 2)
+  avgRoi         Decimal? @map("avg_roi") @db.Decimal(10, 2)
+  skinTypeFocus  String?  @map("skin_type_focus")
+  categoryFocus  String[] @map("category_focus")
+  contact        String?
+  notes          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  campaigns InfluencerCampaign[]
+
+  @@map("influencers")
+}
+
+model InfluencerCampaign {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  influencerId       String    @map("influencer_id") @db.Uuid
+  campaignId         String    @map("campaign_id") @db.Uuid
+  utmCode            String    @unique @map("utm_code")
+  couponCode         String?   @map("coupon_code")
+  fee                Decimal?  @db.Decimal(15, 2)
+  revenueAttributed  Decimal?  @map("revenue_attributed") @db.Decimal(15, 2)
+  roi                Decimal?  @db.Decimal(10, 2)
+  startedAt          DateTime? @map("started_at")
+  endedAt            DateTime? @map("ended_at")
+
+  influencer Influencer @relation(fields: [influencerId], references: [id])
+  campaign   Campaign   @relation(fields: [campaignId], references: [id])
+
+  @@map("influencer_campaigns")
+}
+
+model VocReview {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  skuMasterId     String    @map("sku_master_id") @db.Uuid
+  channel         String
+  channelReviewId String?   @map("channel_review_id")
+  rating          Int?
+  content         String?
+  sentiment       String?
+  tags            Json?
+  lotNumber       String?   @map("lot_number")
+  isAlert         Boolean   @default(false) @map("is_alert")
+  ingestedAt      DateTime  @default(now()) @map("ingested_at")
+  analyzedAt      DateTime? @map("analyzed_at")
+
+  skuMaster SkuMaster @relation(fields: [skuMasterId], references: [id])
+
+  @@index([skuMasterId])
+  @@index([channel])
+  @@index([sentiment])
+  @@index([ingestedAt])
+  @@map("voc_reviews")
+}
+
+model User {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String    @unique
+  name         String?
+  role         String    @default("member")
+  groupId      String?   @map("group_id") @db.Uuid
+  passwordHash String?   @map("password_hash")
+  isActive     Boolean   @default(true) @map("is_active")
+  invitedBy    String?   @map("invited_by") @db.Uuid
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  group     Group?     @relation(fields: [groupId], references: [id])
+  auditLogs AuditLog[]
+  campaigns Campaign[]
+  journeys  Journey[]
+
+  @@map("users")
+}
+
+model Group {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  permissions Json?
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  users User[]
+
+  @@map("groups")
+}
+
+model AuditLog {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String?  @map("user_id") @db.Uuid
+  action        String
+  resource      String
+  resourceId    String?  @map("resource_id")
+  ip            String?
+  userAgent     String?  @map("user_agent")
+  payloadBefore Json?    @map("payload_before")
+  payloadAfter  Json?    @map("payload_after")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model ApiConnection {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  channel        String
+  endpoint       String
+  authType       String    @map("auth_type")
+  tokenEncrypted String?   @map("token_encrypted")
+  refreshToken   String?   @map("refresh_token")
+  tokenExpiresAt DateTime? @map("token_expires_at")
+  status         String    @default("disconnected")
+  lastLatencyMs  Int?      @map("last_latency_ms")
+  lastCheckedAt  DateTime? @map("last_checked_at")
+  errorMessage   String?   @map("error_message")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@map("api_connections")
+}
