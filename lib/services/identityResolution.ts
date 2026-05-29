@@ -44,16 +44,24 @@ export async function resolveIdentity(rawCustomer: RawCustomer, channel: string)
 }
 
 async function upsertIdentity(customerId: string, channel: string, raw: RawCustomer, score: number) {
-  await prisma.customerIdentity.upsert({
-    where: { channel_channelUserId: { channel, channelUserId: raw.channelUserId } },
-    update: { confidenceScore: score },
-    create: {
-      customerId,
-      channel,
-      channelUserId: raw.channelUserId,
-      identifierType: raw.email ? 'email' : raw.phone ? 'phone' : 'device_id',
-      identifierValue: raw.email ?? raw.phone ?? raw.channelUserId,
-      confidenceScore: score,
-    },
+  const existing = await prisma.customerIdentity.findFirst({
+    where: { channel, channelUserId: raw.channelUserId },
   })
+  if (existing) {
+    await prisma.customerIdentity.update({
+      where: { id: existing.id },
+      data: { confidenceScore: score },
+    })
+  } else {
+    await prisma.customerIdentity.create({
+      data: {
+        customerId,
+        channel,
+        channelUserId: raw.channelUserId,
+        identifierType: raw.email ? 'email' : raw.phone ? 'phone' : 'device_id',
+        identifierValue: raw.email ?? raw.phone ?? raw.channelUserId,
+        confidenceScore: score,
+      },
+    })
+  }
 }

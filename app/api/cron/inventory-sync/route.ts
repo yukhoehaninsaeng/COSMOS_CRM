@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { OwnMallAdapter } from '@/lib/adapters/OwnMallAdapter'
 import { CoupangAdapter } from '@/lib/adapters/CoupangAdapter'

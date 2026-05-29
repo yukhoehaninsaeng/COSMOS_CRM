@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db'
 export const POST = async (req: NextRequest) => {
   const body = await req.json() as Record<string, unknown>
   await prisma.channelOrderRaw.create({
-    data: { channel: 'coupang', rawJson: body, processed: false },
+    data: { channel: 'coupang', rawJson: body as object, processed: false },
   })
   return NextResponse.json({ received: true })
 }
