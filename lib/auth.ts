@@ -3,6 +3,11 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 
+// Strip markdown angle-bracket formatting if NEXTAUTH_URL was misconfigured
+const rawUrl = process.env.NEXTAUTH_URL ?? ''
+const cleanUrl = rawUrl.replace(/^<(.+)>$/, '$1')
+if (cleanUrl && cleanUrl !== rawUrl) process.env.NEXTAUTH_URL = cleanUrl
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? 'fallback-dev-secret-not-for-production',
   providers: [
