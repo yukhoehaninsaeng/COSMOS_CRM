@@ -24,7 +24,7 @@ export const GET = async () => {
       select: { email: true },
     })
     for (const admin of adminUsers) {
-      await sendEmail(admin.email, '[BeautyFlow] 유통기한 임박 알림', `<ul>${alerts.map(a => `<li>${a}</li>`).join('')}</ul>`)
+      await sendEmail(admin.email, '[Flowit] 유통기한 임박 알림', `<ul>${alerts.map(a => `<li>${a}</li>`).join('')}</ul>`)
     }
   }
 

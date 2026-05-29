@@ -5,7 +5,7 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'BeautyFlow CRM',
+  title: 'Flowit CRM',
   description: '화장품 브랜드 특화 통합 CRM 플랫폼',
 }
 

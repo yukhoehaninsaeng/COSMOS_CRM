@@ -24,8 +24,8 @@ export const POST = withRole('admin', async (req, user) => {
   })
 
   const inviteUrl = `${process.env.NEXTAUTH_URL}/accept-invite?token=${token}&userId=${newUser.id}`
-  await sendEmail(email, '[BeautyFlow CRM] 초대장', `
-    <h2>BeautyFlow CRM에 초대되었습니다.</h2>
+  await sendEmail(email, '[Flowit CRM] 초대장', `
+    <h2>Flowit CRM에 초대되었습니다.</h2>
     <p>아래 링크를 클릭하여 계정을 설정하세요 (48시간 유효):</p>
     <a href="${inviteUrl}">${inviteUrl}</a>
   `)

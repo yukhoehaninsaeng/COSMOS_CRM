@@ -22,7 +22,7 @@ export default function DashboardPage() {
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">대시보드</h1>
-        <p className="text-muted-foreground mt-1">BeautyFlow CRM 현황 요약</p>
+        <p className="text-muted-foreground mt-1">Flowit CRM 현황 요약</p>
       </div>
 
       <div className="grid grid-cols-5 gap-4 mb-8">

@@ -34,7 +34,7 @@ export default function LoginPage() {
           <div className="flex justify-center mb-4">
             <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white text-2xl font-bold">B</div>
           </div>
-          <CardTitle className="text-2xl">BeautyFlow CRM</CardTitle>
+          <CardTitle className="text-2xl">Flowit CRM</CardTitle>
           <CardDescription>화장품 브랜드 특화 통합 CRM</CardDescription>
         </CardHeader>
         <CardContent>
@@ -42,7 +42,7 @@ export default function LoginPage() {
             {error && <div className="p-3 bg-red-50 text-red-600 rounded-md text-sm">{error}</div>}
             <div className="space-y-2">
               <Label htmlFor="email">이메일</Label>
-              <Input id="email" type="email" placeholder="admin@beautyflow.com" value={email} onChange={e => setEmail(e.target.value)} required />
+              <Input id="email" type="email" placeholder="admin@flowit.com" value={email} onChange={e => setEmail(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">비밀번호</Label>

@@ -35,7 +35,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-sm">B</div>
             <div>
-              <div className="font-bold text-sm">BeautyFlow CRM</div>
+              <div className="font-bold text-sm">Flowit CRM</div>
               <div className="text-xs text-muted-foreground">{session.user.name}</div>
             </div>
           </div>
