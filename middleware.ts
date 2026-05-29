@@ -10,10 +10,15 @@ export async function middleware(request: NextRequest) {
   const isPublic = PUBLIC_ROUTES.some(route => pathname.startsWith(route))
   if (isPublic) return NextResponse.next()
 
-  const session = await auth()
-  if (!session) {
+  try {
+    const session = await auth()
+    if (!session) {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('callbackUrl', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+  } catch {
     const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('callbackUrl', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
