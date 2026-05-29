@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,9 +18,9 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const result = await signIn('credentials', { email, password, redirect: false })
+    const result = await signIn('credentials', { username, password, redirect: false })
     if (result?.error) {
-      setError('이메일 또는 비밀번호가 올바르지 않습니다.')
+      setError('아이디 또는 비밀번호가 올바르지 않습니다.')
       setLoading(false)
     } else {
       router.push('/dashboard')
@@ -32,7 +32,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white text-2xl font-bold">B</div>
+            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white text-2xl font-bold">F</div>
           </div>
           <CardTitle className="text-2xl">Flowit CRM</CardTitle>
           <CardDescription>화장품 브랜드 특화 통합 CRM</CardDescription>
@@ -41,8 +41,8 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && <div className="p-3 bg-red-50 text-red-600 rounded-md text-sm">{error}</div>}
             <div className="space-y-2">
-              <Label htmlFor="email">이메일</Label>
-              <Input id="email" type="email" placeholder="admin@flowit.com" value={email} onChange={e => setEmail(e.target.value)} required />
+              <Label htmlFor="username">아이디</Label>
+              <Input id="username" type="text" placeholder="fdadmin" value={username} onChange={e => setUsername(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">비밀번호</Label>
