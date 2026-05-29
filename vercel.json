@@ -1,11 +1,11 @@
 {
   "crons": [
     { "path": "/api/cron/rfm", "schedule": "0 3 * * *" },
-    { "path": "/api/cron/inventory-sync", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/inventory-sync", "schedule": "0 4 * * *" },
     { "path": "/api/cron/lot-expiry", "schedule": "0 9 * * *" },
     { "path": "/api/cron/voc-alert", "schedule": "0 6 * * *" },
-    { "path": "/api/cron/journey-tick", "schedule": "0 * * * *" },
-    { "path": "/api/cron/api-health", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/journey-tick", "schedule": "0 7 * * *" },
+    { "path": "/api/cron/api-health", "schedule": "0 8 * * *" },
     { "path": "/api/cron/cleanup", "schedule": "0 2 * * 0" }
   ]
 }
